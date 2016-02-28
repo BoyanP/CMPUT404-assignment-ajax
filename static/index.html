@@ -94,9 +94,13 @@ function drawCircle(context,entity) {
         //moveTo(x,y);
         fillStyle = entity["colour"];
         strokeStyle = fillStyle;
-        arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);  
-        stroke();                                
-    }
+	if(entity["radius"]===50){
+	    lineWidth=8;
+	}
+        arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);
+	rect(x,y,entity["radius"],entity["radius"]);
+        stroke();
+        }
 }
 
 function prepEntity(entity) {
