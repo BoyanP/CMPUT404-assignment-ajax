@@ -22,7 +22,7 @@
 
 
 import flask
-from flask import Flask, request , send_from_directory
+from flask import Flask, request
 import json
 
 app = Flask(__name__)
