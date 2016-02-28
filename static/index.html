@@ -33,13 +33,19 @@ var H = canvas.height = window.innerHeight-50;
 
 
 function sendJSONXMLHTTPRequest(url, objects, callback) {
+    //console.log('OBJECTS:' + objects.radius);
     var xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    xhr.overrideMimeType('application/json');
+    xhr.setRequestHeader("Accept",'application/json');
     xhr.onreadystatechange = function () {
         if (xhr.readyState==4) {
             try {
                 if (xhr.status==200) {
                     //XXX: parse some JSON from the request!
                     //XXX: Pass the data to the callback!
+		    var jsonData = JSON.parse(xhr.responseText);
+		    callback(jsonData)
                 }
             } 
             catch(e) {
@@ -47,13 +53,36 @@ function sendJSONXMLHTTPRequest(url, objects, callback) {
             }
         }
     };
+
     //XXX: POST to a URL
     //XXX: set the mimetype and the accept headers!
     // Remember to use application/json !
+
+   
+    xhr.send(JSON.stringify(objects));
+    
+
 }
 
 
 world = {};
+colors = ['#FF4000','#ffad33',"#ffff4d","#40ff00","#66ccff","#4b0082","#ee82ee"];
+colorCount = 0;
+
+function nextColor(){
+
+    var color = colors[colorCount];
+    colorCount++;
+    if(colorCount > 6){
+	
+	colorCount = 0;
+
+    }
+
+   return color;
+
+}
+
 
 //XXX: TODO Make this prettier!
 function drawCircle(context,entity) {
@@ -71,12 +100,14 @@ function drawCircle(context,entity) {
 }
 
 function prepEntity(entity) {
+    
     if (!entity["colour"]) {
-        entity["colour"] = "#FF0000";
+	entity["colour"]="#FF0000";
     }
     if (!entity["radius"]) {
         entity["radius"] = 50;
     }
+
     return entity;
 }
 
@@ -136,8 +167,19 @@ function getPosition(e) {
 
 function addEntity(entity, data) {
     world[entity] = data;
-    drawNextFrame(); // (but should we?)
+    prepEntity(world[entity]);
     //XXX: Send a XHTML Request that updates the entity you just  modified!
+    //console.log(world[entity].radius);
+    var url = 'http://localhost:5000/entity/' + (entity.toString() || entity)    
+    var callback = function(data){
+	world[entity] = data;
+	drawNextFrame();
+
+    }
+    
+    var success = sendJSONXMLHTTPRequest(url,data,callback);
+
+
 
 }
 
@@ -247,26 +289,68 @@ mouse = (function() {
 // Add the application specific mouse listeners!
 //XXX: TODO Make these prettier!
 mouse.mousedowners.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'blue'});
+    addEntityWithoutName({'x':x,'y':y,'colour':nextColor()});
 });
 
 mouse.mouseuppers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'red'});
+    addEntityWithoutName({'x':x,'y':y,'colour':nextColor()});
 });
 
 mouse.mousedraggers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'green',
+    addEntityWithoutName({'x':x,'y':y,'colour':nextColor(),
                           'radius':10});
 });
 
 
 function update() {
     //XXX: TODO Get the world from the webservice using a XMLHTTPRequest
-    drawFrame();
+    function getJSON(url,callback){
+	//console.log('plz?');
+	var xhr = new XMLHttpRequest();
+	xhr.open("GET", url);
+	//console.log('sup?');
+	xhr.overrideMimeType('application/json');
+	xhr.setRequestHeader("Accept",'application/json');
+	//console.log(xhr);
+	xhr.onreadystatechange = function () {
+	    //console.log('yoyo?');
+            if (xhr.readyState==4) {
+		try {
+		    //console.log("jhw asbout now?");
+                    if (xhr.status==200) {
+			//console.log("hi???");
+			//XXX: parse some JSON from the request!
+			//XXX: Pass the data to the callback!
+			var jsonData = JSON.parse(xhr.responseText);
+			callback(jsonData);
+                    }
+		} 
+		catch(e) {
+                    alert('Error: ' + e.name);
+		}
+            }
+	};
+
+	xhr.send(null);
+
+    }
+    //console.log("hello?");
+    getJSON('http://localhost:5000/world',function(data){
+
+	//console.log("do i ever come here?");
+	world = data;
+	//console.log(world);
+	renderFrame();
+
+
+    });
+    //drawFrame();
+
 }
 
+
 // 30 frames per second
-setInterval( update, 1000/30.0);
+setInterval(update, 1000/30);
 
 
 
